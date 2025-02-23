@@ -1,4 +1,4 @@
-use flexi_logger::{Logger};
+use flexi_logger::Logger;
 use futures::{future::ready, prelude::*};
 use gpsd_proto::{UnifiedResponse, ENABLE_WATCH_CMD, PROTO_MAJOR_MIN};
 use log::{debug, error, info, trace};
@@ -43,11 +43,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 if let Some(speed) = t.speed {
                                     if let Some(bearing) = t.track {
                                         if let Some(alt) = t.alt {
-                                            let command = format!(
-                                                "adb shell am start-foreground-service --user 0 -n io.appium.settings/.LocationService --es longitude {} --es latitude {} --es speed {} --es bearing {} --es altitude {}", lon, lat, speed, bearing, alt
-                                            );
-                                            if let Err(e) = Exec::shell(command).join() {
-                                                eprintln!("Failed to forward GPS data: {}", e);
+                                            if let Some(acc) = t.eph {
+                                                let command = format!(
+                                                    "adb shell am start-foreground-service --user 0 -n io.appium.settings/.LocationService --es longitude {} --es latitude {} --es speed {} --es bearing {} --es altitude {} --es accuracy {}", lon, lat, speed, bearing, alt, acc
+                                                );
+                                                if let Err(e) = Exec::shell(command).join() {
+                                                    eprintln!("Failed to forward GPS data: {}", e);
+                                                }
                                             }
                                         }
                                     }
