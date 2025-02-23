@@ -7,6 +7,7 @@ use std::error::Error;
 use std::net::SocketAddr;
 use subprocess::Exec;
 use tokio::net::TcpStream;
+use tokio::time::{Duration, Instant};
 use tokio_util::codec::{Framed, LinesCodec};
 
 #[tokio::main(flavor = "current_thread")]
@@ -21,6 +22,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut framed = Framed::new(stream, LinesCodec::new());
 
     framed.send(ENABLE_WATCH_CMD).await?;
+    let mut last_sent = Instant::now() - Duration::from_secs(1);
+
     framed
         .try_for_each(|line| {
             trace!("Raw {line}");
@@ -38,21 +41,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     UnifiedResponse::Device(d) => debug!("Device {d:?}"),
                     UnifiedResponse::Tpv(t) => {
                         debug!("Tpv {t:?}");
-                        if let Some(lat) = t.lat {
-                            if let Some(lon) = t.lon {
-                                if let Some(speed) = t.speed {
-                                    if let Some(bearing) = t.track {
-                                        if let Some(alt) = t.alt {
-                                            if let Some(acc) = t.eph {
-                                                let command = format!(
-                                                    "adb shell am start-foreground-service --user 0 -n io.appium.settings/.LocationService --es longitude {} --es latitude {} --es speed {} --es bearing {} --es altitude {} --es accuracy {}", lon, lat, speed, bearing, alt, acc
-                                                );
-                                                if let Err(e) = Exec::shell(command).join() {
-                                                    eprintln!("Failed to forward GPS data: {}", e);
-                                                }
-                                            }
-                                        }
-                                    }
+                        if let (Some(lat), Some(lon), Some(speed), Some(bearing), Some(alt), Some(acc)) = (t.lat, t.lon, t.speed, t.track, t.alt, t.eph) {
+                            let now = Instant::now();
+                            if now.duration_since(last_sent) >= Duration::from_secs(1) {
+                                last_sent = now;
+                                let command = format!(
+                                    "adb shell am start-foreground-service --user 0 -n io.appium.settings/.LocationService --es longitude {} --es latitude {} --es speed {} --es bearing {} --es altitude {} --es accuracy {}", lon, lat, speed, bearing, alt, acc
+                                );
+                                if let Err(e) = Exec::shell(command).join() {
+                                    eprintln!("Failed to forward GPS data: {}", e);
                                 }
                             }
                         }
