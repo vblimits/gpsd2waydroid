@@ -1,0 +1,1 @@
+used to send gps data from gpsd to waydroid for navigation works as a systemd service and passes to waydroid with adb and io.appium.settings (needs mock location turn on for the app and dev tools in waydroid)
