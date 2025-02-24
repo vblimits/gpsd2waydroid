@@ -11,5 +11,5 @@ pkgs.rustPlatform.buildRustPackage rec {
     sha256 = "vITOvF14+nsyBYvSi5ce0BfQ5TLYRYGZlT9msnHJlpA="; # Placeholder, replace with actual hash
   };
 
-  cargoSha256 = "pdS8flxSwhuGgojlqCQVPobYVY8ffx9MsO4J122kTfQ="; # Placeholder, replace with actual hash
+  cargoHash = "sha256-pdS8flxSwhuGgojlqCQVPobYVY8ffx9MsO4J122kTfQ="; # Placeholder, replace with actual hash
 }
